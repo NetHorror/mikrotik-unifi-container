@@ -1,4 +1,4 @@
-# docker-unifi-arm64
+# mikrotik-unifi-container
 
 This repo contains a Dockerized version of [Ubiquiti Network's](https://www.ubnt.com/) UniFi
 Network Application, built and published as a **multi-arch (`amd64`/`arm64`) image**.
@@ -72,7 +72,7 @@ docker run -d --init \
    -v ~/unifi:/unifi \
    --user unifi \
    --name unifi \
-   ghcr.io/nethorror/docker-unifi-arm64
+   ghcr.io/nethorror/mikrotik-unifi-container
 ```
 
 In a minute or two, (after Unifi Controller starts up) you can go to
@@ -136,8 +136,8 @@ to the directory `/unifi`inside the container.
 If you created the directory elsewhere, modify the `~/unifi` part of this option to match.
 See the [Volumes](#volumes) discussion for other volumes used by Unifi Controller.
 - `--user unifi` - Run as a non-root user. See the [Run as non-root User](#run-as-non-root-user) discussion below
-- `ghcr.io/nethorror/docker-unifi-arm64` - the name of the container to use.
-The image is retrieved from [GitHub Container Registry.](https://github.com/NetHorror/docker-unifi-arm64/pkgs/container/docker-unifi-arm64)
+- `ghcr.io/nethorror/mikrotik-unifi-container` - the name of the container to use.
+The image is retrieved from [GitHub Container Registry.](https://github.com/NetHorror/mikrotik-unifi-container/pkgs/container/mikrotik-unifi-container)
 The [Current Information](#current-information) section below discusses the versions/tags that are available.
 
 ## Current Information
@@ -146,19 +146,22 @@ The current tested version of unifi-docker is listed in the table below.
 You can choose the version of Unifi Controller in the `docker run ...` command.
 In Docker terminology, these versions are specified by "tags".
 
-For example, in this project the container named `ghcr.io/nethorror/docker-unifi-arm64`
+For example, in this project the container named `ghcr.io/nethorror/mikrotik-unifi-container`
 (with no "tag")
 provides the most recent stable release.
 The table below lists recent versions.
 
 _Note:_ In Docker, specifying an image with no tag
-(e.g., `ghcr.io/nethorror/docker-unifi-arm64`) gets the "latest" tag.
+(e.g., `ghcr.io/nethorror/mikrotik-unifi-container`) gets the "latest" tag.
 This always tracks the most recent **stable** UniFi Network Application release —
 this fork's auto-updater deliberately never picks up betas or release candidates.
 
 | Tag                                                                                 | Description                                        | Changelog                                                                                                                        |
 |--------------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| [`latest` `v10.6.101`](https://github.com/NetHorror/docker-unifi-arm64/blob/main/Dockerfile) | Current Stable: Version 10.6.101 as of 2026-09-04 | [Change Log 10.6.101](https://community.ui.com/releases/UniFi-Network-Application-10-6-101) |
+| [`latest` `v10.6.101`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) | Current Stable: Version 10.6.101 as of 2026-08-26 | [Change Log 10.6.101](https://community.ui.com/releases/UniFi-Network-Application-10-6-101) |
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the full history of stable releases this fork has
+picked up, auto-generated from UniFi's own release notes each time `update.yml` runs.
 
 ### multiarch
 
@@ -246,12 +249,12 @@ not required if the container sits directly on the same bridge as your APs):
 ### 5. Add and start the container
 
 ```
-/container/add remote-image=ghcr.io/nethorror/docker-unifi-arm64:latest \
+/container/add remote-image=ghcr.io/nethorror/mikrotik-unifi-container:latest \
     interface=veth-unifi root-dir=disk1/unifi-root \
     mounts=unifi-mounts envlist=unifi-env \
     logging=yes start-on-boot=yes
 
-/container/start [find remote-image~"docker-unifi-arm64"]
+/container/start [find remote-image~"mikrotik-unifi-container"]
 ```
 
 Give it a couple of minutes on first start (it's initializing MongoDB + the controller),
@@ -268,7 +271,7 @@ then check `/container/print` and `/log/print where topics~"container"`. Browse 
 A router's RAM is shared with routing itself — don't let the controller starve it:
 
 ```
-/container/set [find remote-image~"docker-unifi-arm64"] memory-max=1073741824
+/container/set [find remote-image~"mikrotik-unifi-container"] memory-max=1073741824
 ```
 
 ...and set a conservative JVM heap via the `unifi-env` envlist so Java doesn't try to
@@ -309,7 +312,7 @@ _Hint: Port 10001 should be forwareded to make it work._
 
 ### Other
 
-See [Side Projects](https://github.com/NetHorror/docker-unifi-arm64/blob/main/Side-Projects.md#other-techniques-for-adoption) for
+See [Side Projects](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Side-Projects.md#other-techniques-for-adoption) for
 other techniques to get Unifi devices to adopt your
 new Unifi Controller.
 
@@ -418,6 +421,15 @@ Java Virtual Machine (JVM) allocates available memory.
 For larger installations a larger value is recommended. For memory constrained system this value can be lowered. 
 **Default: 1024M** 
 
+* `DISABLE_UOS_UPGRADE_NAG`
+Self-hosted installs are shown an "Upgrade to UniFi OS Server" modal after login. If you intend
+to keep running the self-hosted/sysvinit controller (e.g. on a MikroTik router), set this to
+`true` to have the entrypoint inject a small script into the webapp's `index.html` on startup
+that clicks the controller's own **Remind Me Later** button whenever that dialog appears — no
+UniFi files are modified beyond that one injected `<script>` tag, and it is a silent no-op if
+the dialog's markup ever changes. See [`functions`](functions)'s `patch_uos_nag()`.
+**Default: unset**
+
 ## Exposed Ports
 
 The Unifi-in-Docker container exposes the following ports.
@@ -487,9 +499,9 @@ If the output contains `id-ec` as shown in the example, then your certificate mi
 ## Additional Information
 
 This document describes everything you need to get Unifi-in-Docker running.
-The [Side Projects and Background Info](https://github.com/NetHorror/docker-unifi-arm64/blob/main/Side-Projects.md) page
+The [Side Projects and Background Info](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Side-Projects.md) page
 provides more about what we've learned while developing Unifi-in-Docker.
 
 ## TODO
 
-This list is empty for now, please [add your suggestions](https://github.com/NetHorror/docker-unifi-arm64/issues).
+This list is empty for now, please [add your suggestions](https://github.com/NetHorror/mikrotik-unifi-container/issues).
