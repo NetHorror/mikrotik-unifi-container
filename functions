@@ -31,3 +31,44 @@ validate() (
     echo "Hotfix validated: $(basename ${i::-16})"
   done
 )
+
+# Optional, opt-in (DISABLE_UOS_UPGRADE_NAG=true): auto-dismiss the
+# "Upgrade to UniFi OS Server" modal shown to self-hosted installs, by
+# injecting a small script into the webapp's index.html that clicks the
+# controller's own "Remind Me Later" button. Idempotent (safe to run on
+# every start) and a silent no-op if no index.html is found or the dialog's
+# markup ever changes shape - no UniFi files are modified besides this one
+# injected <script> tag. Kept on a single line so a plain sed substitution
+# works regardless of whether index.html is pretty-printed or minified.
+patch_uos_nag() {
+  [ "${DISABLE_UOS_UPGRADE_NAG}" == "true" ] || return 0
+
+  local marker="mikrotik-unifi-container: uos-nag-patch"
+  local snippet="<!-- ${marker} v1 --><script>(function(){var a='data-mikrotik-unifi-container-uos-nag-patch';if(document.documentElement.hasAttribute(a))return;document.documentElement.setAttribute(a,'1');function dismiss(){var dialogs=document.querySelectorAll('[role=\"dialog\"]');for(var i=0;i<dialogs.length;i++){var d=dialogs[i];if(!/Upgrade to UniFi OS Server/i.test(d.textContent||''))continue;var btns=d.querySelectorAll('button');for(var j=0;j<btns.length;j++){if(/Remind Me Later/i.test(btns[j].textContent||'')){btns[j].click();return;}}}}setInterval(dismiss,250);window.addEventListener('load',dismiss);})();</script>"
+
+  local file found=0 patched=0
+  while IFS= read -r -d '' file; do
+    found=$((found+1))
+    grep -qF "${marker}" "$file" && continue
+
+    if grep -q '</body>' "$file"; then
+      sed -i "s#</body>#${snippet}</body>#" "$file"
+    elif grep -q '</html>' "$file"; then
+      sed -i "s#</html>#${snippet}</html>#" "$file"
+    else
+      printf '%s\n' "$snippet" >> "$file"
+    fi
+
+    # Drop any stale pre-gzipped sibling so the server can't keep serving the
+    # unpatched copy instead of the file we just modified.
+    [ -f "${file}.gz" ] && rm -f "${file}.gz"
+
+    patched=$((patched+1))
+  done < <(find "${BASEDIR}/webapps" -type f -iname "index.html" -print0 2>/dev/null)
+
+  if [ "${found}" -eq 0 ]; then
+    log "WARNING: DISABLE_UOS_UPGRADE_NAG=true but no index.html found under ${BASEDIR}/webapps to patch"
+  elif [ "${patched}" -gt 0 ]; then
+    log "Patched ${patched} index.html file(s) to auto-dismiss the UniFi OS Server upgrade nag (DISABLE_UOS_UPGRADE_NAG=true)"
+  fi
+}
