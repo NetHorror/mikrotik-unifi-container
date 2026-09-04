@@ -31,15 +31,27 @@ fi
 
 apt-get update
 apt-get install -qy --no-install-recommends \
-    apt-transport-https \
+    binutils \
+    ca-certificates \
     curl \
     dirmngr \
     gpg \
     gpg-agent \
-    openjdk-17-jre-headless \
-    procps \
     libcap2-bin \
+    logrotate \
+    openjdk-25-jre-headless \
+    procps \
+    software-properties-common \
     tzdata
+
+# UniFi 10.1+ requires MongoDB 6.0+ (checked by the .deb package's own dependency resolution).
+# mongodb-org-server isn't published for the resolute (26.04) codename yet, only client tools —
+# the noble (24.04) arm64/amd64 packages install and run fine on 26.04 (glibc-compatible).
+curl -Ls https://www.mongodb.org/static/pgp/server-8.0.asc | gpg --dearmor -o /usr/share/keyrings/mongo.gpg
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongo.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+apt-get update
+apt-get install -qy mongodb-org-server
+
 echo 'deb https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/100-ubnt-unifi.list
 tryfail apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 06E85760C0A52C50
 
