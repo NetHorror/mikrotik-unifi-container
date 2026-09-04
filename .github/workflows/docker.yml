@@ -13,7 +13,7 @@ permissions:
   packages: write
 
 env:
-  TEST_TAG: nethorror/docker-unifi-arm64:test
+  TEST_TAG: nethorror/mikrotik-unifi-container:test
   PKGURL: https://dl.ui.com/unifi/10.6.101/unifi_sysvinit_all.deb
 
 jobs:

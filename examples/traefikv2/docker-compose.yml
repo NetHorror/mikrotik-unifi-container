@@ -1,6 +1,6 @@
 services:
   controller:
-    image: ghcr.io/nethorror/docker-unifi-arm64:$TAG_NAME
+    image: ghcr.io/nethorror/mikrotik-unifi-container:$TAG_NAME
     container_name: unifi
     networks:
       - unifi

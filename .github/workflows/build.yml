@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  TEST_TAG: nethorror/docker-unifi-arm64:test
+  TEST_TAG: nethorror/mikrotik-unifi-container:test
   PKGURL: https://dl.ui.com/unifi/10.6.101/unifi_sysvinit_all.deb
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=nethorror/docker-unifi-arm64
+          DOCKER_IMAGE=nethorror/mikrotik-unifi-container
           VERSION=noop
           if [ "${{ github.event_name }}" = "schedule" ]; then
             VERSION=nightly
