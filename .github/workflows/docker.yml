@@ -88,12 +88,22 @@ jobs:
           platforms: linux/arm64/v8
           tags: mikrotik-unifi-container:arm64-export
 
-      - name: Export arm64 image as a RouterOS-loadable tarball
+      - name: Build amd64 image for manual download
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          tags: mikrotik-unifi-container:amd64-export
+
+      - name: Export images as loadable tarballs
         run: |
           docker save mikrotik-unifi-container:arm64-export | gzip \
             > "mikrotik-unifi-container-${{ steps.version.outputs.version }}-arm64.tar.gz"
+          docker save mikrotik-unifi-container:amd64-export | gzip \
+            > "mikrotik-unifi-container-${{ steps.version.outputs.version }}-amd64.tar.gz"
 
-      - name: Attach tarball to the matching GitHub release
+      - name: Attach tarballs to the matching GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -101,6 +111,7 @@ jobs:
           if gh release view "$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$VERSION" \
               "mikrotik-unifi-container-${VERSION}-arm64.tar.gz" \
+              "mikrotik-unifi-container-${VERSION}-amd64.tar.gz" \
               --repo "${{ github.repository }}" \
               --clobber
           else
