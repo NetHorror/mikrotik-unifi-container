@@ -253,19 +253,30 @@ not required if the container sits directly on the same bridge as your APs):
 ### 4. Environment variables and mounts
 
 ```
-/container/envs/add list=unifi-env key=TZ value="Europe/Moscow"
-/container/envs/add list=unifi-env key=SYSTEM_IP value=172.17.0.2
+/container/envs/add list=unifi key=TZ value="Europe/Moscow"
+/container/envs/add list=unifi key=SYSTEM_IP value=172.17.0.2
+/container/envs/add list=unifi key=DISABLE_UOS_UPGRADE_NAG value=true
 
-/container/mounts/add list=unifi-mounts src=disk1/unifi/data dst=/unifi/data
-/container/mounts/add list=unifi-mounts src=disk1/unifi/log dst=/unifi/log
+/container/mounts/add list=unifi src=disk1/unifi/data dst=/unifi/data
+/container/mounts/add list=unifi src=disk1/unifi/log dst=/unifi/log
 ```
+
+Give the envs/mounts lists (and the container itself, below) the same plain name —
+`unifi` is used throughout this guide. Avoid names like `unifi-new`/`unifi-dev` for
+anything you intend to keep long-term: they're fine for a temporary side-by-side
+container while testing, but renaming a *production* container's own lists later
+means recreating it (see [Renaming an existing container's lists](#renaming-an-existing-containers-lists)
+below) — better to pick the final name up front. Also worth setting
+`DISABLE_UOS_UPGRADE_NAG=true` from the start: without it, every login shows an
+"Upgrade to UniFi OS Server" nag modal that doesn't apply to a self-hosted/sysvinit
+install like this one (see [Environment Variables](#environment-variables) below).
 
 ### 5. Add and start the container
 
 ```
 /container/add remote-image=ghcr.io/nethorror/mikrotik-unifi-container:latest \
-    interface=veth-unifi root-dir=disk1/unifi-root \
-    mounts=unifi-mounts envlist=unifi-env \
+    interface=veth-unifi root-dir=disk1/unifi/root \
+    mountlists=unifi envlist=unifi \
     logging=yes start-on-boot=yes
 
 /container/start [find remote-image~"mikrotik-unifi-container"]
@@ -278,18 +289,29 @@ then check `/container/print` and `/log/print where topics~"container"`. Browse 
 > **Note on exact command syntax:** MikroTik has renamed a couple of `/container/add`
 > parameters across RouterOS versions (e.g. `mounts=`/`mountlists=`, `envlist=`/`envlists=`).
 > Run `/container/add ?` on your actual RouterOS version to confirm the exact parameter
-> names before pasting these commands.
+> names before pasting these commands. Confirmed on **RouterOS 7.24.2**: the plural
+> forms are correct there — `mountlists=` (not `mounts=`) and `envlist=`.
 
 ### 6. Resource limits (recommended on a router)
 
-A router's RAM is shared with routing itself — don't let the controller starve it:
+A router's RAM is shared with routing itself — don't let the controller starve it. Set a
+conservative JVM heap via the `unifi` envlist, e.g. `JVM_MAX_HEAP_SIZE=1024M`, then give
+`memory-max` **meaningful headroom above that**, not the same value:
 
 ```
-/container/set [find remote-image~"mikrotik-unifi-container"] memory-max=1073741824
+/container/set [find remote-image~"mikrotik-unifi-container"] memory-max=2684354560
 ```
 
-...and set a conservative JVM heap via the `unifi-env` envlist so Java doesn't try to
-grab more than the container's own limit, e.g. `JVM_MAX_HEAP_SIZE=768M`. If you have more
+`memory-max` is a hard cgroup-style limit — the container is OOM-killed the instant it's
+hit, no matter how briefly. `JVM_MAX_HEAP_SIZE` only bounds the JVM heap; the JVM itself
+needs extra room beyond that for native/off-heap memory, and `mongod` runs as a separate
+process inside the same container with its own memory footprint on top. Setting
+`memory-max` equal to (or too close to) `JVM_MAX_HEAP_SIZE` reliably OOM-kills the
+container shortly after a healthy-looking start — confirmed in practice: with
+`JVM_MAX_HEAP_SIZE=1024M`, `memory-max=1073741824` (1 GiB, i.e. equal to the heap) died
+with `killed due to out of memory` in `/container/print`, while real steady-state usage
+for this workload sat around 1.8–2.0 GiB. `memory-max=2684354560` (2.5 GiB) runs
+healthy with comfortable headroom. If you have more
 than a handful of APs, also set `LOTSOFDEVICES=true` (see
 [Environment Variables](#environment-variables) below) — it trims a few JVM/UniFi settings
 for exactly this kind of memory-constrained deployment.
@@ -300,6 +322,34 @@ Because RouterOS pulls the image by tag, updating is: stop the container, remove
 `/container/add` again with the same `remote-image=...:latest` (RouterOS re-pulls), then
 start it. Your data lives in the mounted `disk1/unifi/...` paths, so nothing is lost —
 same principle as the generic [Upgrading](#upgrading-unifi-controller) section above.
+
+### Renaming an existing container's lists
+
+`/container/envs` and `/container/mounts` are separate named-list tables, not inline
+parameters — several containers can share (or each have their own) `list=` name. If you
+need to rename an already-running container's envlist/mountlist to tidy things up:
+
+```
+/container/stop [find name=unifi]
+/container/envs/add list=unifi key=... value=...   ;# repeat for each key you need
+/container/mounts/add list=unifi src=... dst=... mode=rw   ;# repeat for each mount
+/container/envs/remove [find list=old-list-name]
+/container/mounts/remove [find list=old-list-name]
+/container/set [find name=unifi] envlist=unifi mountlists=unifi
+/container/start [find name=unifi]
+```
+
+This is cheap — the container object itself doesn't need to be recreated, and none of
+its extracted image layers are touched. **`root-dir` is different:** RouterOS stores a
+container's extracted image layers directly under its `root-dir` path, so changing
+`root-dir` (e.g. to rename `disk1/unifi-dev-root` → `disk1/unifi/root`) forces a full
+re-pull and re-extraction of every image layer from the registry — confirmed in
+practice (an ~18-layer, ~2 GB pull from scratch). The mounted data under `/unifi/data`
+and `/unifi/log` is untouched either way (it's not under `root-dir`), but budget for the
+re-download and don't do this on a whim on a slow link. To rename `root-dir`, you must
+`/container/remove` the container object and `/container/add` it again with the new
+`root-dir=` — same procedure as [Updating](#7-updating) above, just with a different
+`root-dir=` value in the `/container/add` line.
 
 ## Adopting Access Points and Unifi Devices
 
