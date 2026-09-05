@@ -295,10 +295,12 @@ then check `/container/print` and `/log/print where topics~"container"`. Browse 
 #### Alternative: manual download instead of `remote-image=`
 
 Every [GitHub Release](https://github.com/NetHorror/mikrotik-unifi-container/releases)
-also carries a pre-built `mikrotik-unifi-container-<version>-arm64.tar.gz` asset —
-the same image published to GHCR, already saved as a plain Docker tarball. Useful if you'd
-rather not have the router pull directly from a registry (offline/air-gapped install, or
-just a more predictable transfer):
+also carries pre-built `mikrotik-unifi-container-<version>-arm64.tar.gz` and
+`-amd64.tar.gz` assets — the same images published to GHCR, already saved as plain Docker
+tarballs. Grab the one matching your target architecture (`arm64` for MikroTik CCR2116 and
+similar ARM boards, `amd64` for a regular x86_64 host). Useful if you'd rather not have the
+router pull directly from a registry (offline/air-gapped install, or just a more
+predictable transfer):
 
 ```
 # on any machine, then scp/transfer the .tar.gz to the router's storage
