@@ -55,7 +55,7 @@ jobs:
         run: |
           gh release create "${{ steps.update.outputs.version }}" \
             --target main \
-            --title "UniFi Network Application ${{ steps.update.outputs.version }}" \
+            --title "UniFi Network Application ${{ steps.update.outputs.version }} — Docker image for RouterOS" \
             --notes-file "${RUNNER_TEMP}/unifi-release-notes.md"
 
       - name: Trigger image build
