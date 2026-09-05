@@ -292,6 +292,27 @@ then check `/container/print` and `/log/print where topics~"container"`. Browse 
 > names before pasting these commands. Confirmed on **RouterOS 7.24.2**: the plural
 > forms are correct there — `mountlists=` (not `mounts=`) and `envlist=`.
 
+#### Alternative: manual download instead of `remote-image=`
+
+Every [GitHub Release](https://github.com/NetHorror/mikrotik-unifi-container/releases)
+also carries a pre-built `mikrotik-unifi-container-<version>-arm64.tar.gz` asset —
+the same image published to GHCR, already saved as a plain Docker tarball. Useful if you'd
+rather not have the router pull directly from a registry (offline/air-gapped install, or
+just a more predictable transfer):
+
+```
+# on any machine, then scp/transfer the .tar.gz to the router's storage
+gunzip -c mikrotik-unifi-container-<version>-arm64.tar.gz > unifi.tar
+
+/container/add file=disk1/unifi/unifi.tar \
+    interface=veth-unifi root-dir=disk1/unifi/root \
+    mountlists=unifi envlist=unifi \
+    logging=yes start-on-boot=yes
+```
+
+Everything else (start, resource limits, updating) works the same either way — the
+container object doesn't care whether it was created from `remote-image=` or `file=`.
+
 ### 6. Resource limits (recommended on a router)
 
 A router's RAM is shared with routing itself — don't let the controller starve it. Set a
