@@ -275,6 +275,20 @@ def update_changelog(version: str, date_str: str, link: str, description_html: s
         f.write(new_src)
 
 
+def write_release_notes(link: str, description_html: str) -> None:
+    """
+    Write the same "what's new" text used in the CHANGELOG entry to a file
+    outside the repo tree, so the GitHub Actions workflow can pass it to
+    `gh release create --notes-file` without it being picked up by `git add -A`.
+    """
+    body = html_to_markdown(description_html) if description_html else ""
+    notes = f"[Official release notes]({link})\n\n{body}\n"
+
+    notes_path = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "unifi-release-notes.md")
+    with open(notes_path, "w", encoding="utf-8") as f:
+        f.write(notes)
+
+
 def main() -> None:
     feed = fetch(FEED_URL)
     rel = parse_rss_latest(feed)
@@ -288,6 +302,7 @@ def main() -> None:
     update_dockerfile(pkg_url)
     update_readme(version, date_str, link)
     update_changelog(version, date_str, link, rel["description"])
+    write_release_notes(link, rel["description"])
 
     # Printed so GitHub Actions step can capture it
     print(version)
