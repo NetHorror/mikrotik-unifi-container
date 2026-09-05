@@ -44,13 +44,15 @@ apt-get install -qy --no-install-recommends \
     software-properties-common \
     tzdata
 
-# UniFi 10.1+ requires MongoDB 6.0+ (checked by the .deb package's own dependency resolution).
-# mongodb-org-server isn't published for the resolute (26.04) codename yet, only client tools —
-# the noble (24.04) arm64/amd64 packages install and run fine on 26.04 (glibc-compatible).
-curl -Ls https://www.mongodb.org/static/pgp/server-8.0.asc | gpg --dearmor -o /usr/share/keyrings/mongo.gpg
-echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongo.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+# EXPERIMENTAL (branch experiment/mongo44-cortex-a72): pinned to MongoDB 4.4 instead of the
+# usual 6.0+ requirement. Official MongoDB ARM64 builds from 5.0 onward are compiled requiring
+# ARMv8.1 LSE atomics, which older ARM64 cores (e.g. Cortex-A72, as used in MikroTik CCR2116)
+# don't implement — mongod hits SIGILL immediately. 4.4 is the last line built without that
+# requirement. See project memory unifi-container-arm64-mongodb-incompatibility for details.
+curl -Ls https://www.mongodb.org/static/pgp/server-4.4.asc | gpg --dearmor -o /usr/share/keyrings/mongo.gpg
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongo.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 apt-get update
-apt-get install -qy mongodb-org-server
+apt-get install -qy mongodb-org-server=4.4.18 mongodb-org-shell=4.4.18
 
 echo 'deb [signed-by=/usr/share/keyrings/unifi.gpg] https://www.ui.com/downloads/unifi/debian stable ubiquiti' | tee /etc/apt/sources.list.d/100-ubnt-unifi.list
 tryfail curl -fsSL https://dl.ui.com/unifi/unifi-repo.gpg -o /tmp/unifi-repo.gpg
@@ -62,7 +64,10 @@ if [ -d "/usr/local/docker/pre_build/$(dpkg --print-architecture)" ]; then
 fi
 
 curl -L -o ./unifi.deb "${1}"
-apt -qy install ./unifi.deb
+# unifi.deb declares a hard Depends on mongodb-org (>=6.0) at the packaging-metadata level;
+# --force-depends skips only that check (postinst still runs normally). Do NOT follow this with
+# `apt-get install -f` — it would "fix" the unmet dependency by pulling MongoDB 6+ back in.
+dpkg -i --force-depends ./unifi.deb
 rm -f ./unifi.deb
 chown -R unifi:unifi /usr/lib/unifi
 rm -rf /var/lib/apt/lists/*
