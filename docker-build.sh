@@ -44,11 +44,11 @@ apt-get install -qy --no-install-recommends \
     software-properties-common \
     tzdata
 
-# EXPERIMENTAL (branch experiment/mongo44-cortex-a72): pinned to MongoDB 4.4 instead of the
-# usual 6.0+ requirement. Official MongoDB ARM64 builds from 5.0 onward are compiled requiring
-# ARMv8.1 LSE atomics, which older ARM64 cores (e.g. Cortex-A72, as used in MikroTik CCR2116)
-# don't implement — mongod hits SIGILL immediately. 4.4 is the last line built without that
-# requirement. See project memory unifi-container-arm64-mongodb-incompatibility for details.
+# Pinned to MongoDB 4.4 instead of the version the unifi.deb package normally depends on (6.0+).
+# Official MongoDB ARM64 builds from 5.0 onward are compiled requiring ARMv8.1 LSE atomics, which
+# older ARM64 cores (e.g. Cortex-A72, as used in MikroTik CCR2116) don't implement — mongod hits
+# SIGILL immediately. 4.4 is the last line built without that requirement, and is the same
+# generation of MongoDB the router's own stock UniFi container has run for years without issue.
 # mongodb-org 4.4 packages depend on libssl1.1, which Ubuntu dropped from its repos years ago
 # (replaced by libssl3). Fetch it directly from the last archive that still hosts it.
 case "$(dpkg --print-architecture)" in
