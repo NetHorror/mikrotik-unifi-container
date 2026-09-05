@@ -1,5 +1,7 @@
 # mikrotik-unifi-container
 
+[![Publish Docker image](https://github.com/NetHorror/mikrotik-unifi-container/actions/workflows/docker.yml/badge.svg)](https://github.com/NetHorror/mikrotik-unifi-container/actions/workflows/docker.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE) ![Platform: amd64 | arm64](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-informational) ![Registry: GHCR](https://img.shields.io/badge/registry-ghcr.io-brightgreen)
+
 This repo contains a Dockerized version of [Ubiquiti Network's](https://www.ubnt.com/) UniFi
 Network Application, built and published as a **multi-arch (`amd64`/`arm64`) image**.
 
@@ -158,7 +160,7 @@ this fork's auto-updater deliberately never picks up betas or release candidates
 
 | Tag                                                                                 | Description                                        | Changelog                                                                                                                        |
 |--------------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| [`latest` `v10.6.101`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) | Current Stable: Version 10.6.101 as of 2026-08-26 | [Change Log 10.6.101](https://community.ui.com/releases/UniFi-Network-Application-10-6-101/05283624-0980-4dd7-b8d6-9fa5c4e28da4) |
+| [`latest` `10.6.101`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) | Current Stable: Version 10.6.101 as of 2026-08-26 | [Change Log 10.6.101](https://community.ui.com/releases/UniFi-Network-Application-10-6-101/05283624-0980-4dd7-b8d6-9fa5c4e28da4) |
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full history of stable releases this fork has
 picked up, auto-generated from UniFi's own release notes each time `update.yml` runs.
@@ -166,8 +168,16 @@ picked up, auto-generated from UniFi's own release notes each time `update.yml` 
 ### multiarch
 
 Images are built for `amd64` and `arm64` (`linux/arm64/v8`). Base OS is Ubuntu 26.04, with
-MongoDB 8.0 and Java 25 — this is what unlocks tracking current UniFi releases (which need
-MongoDB 6.0+) instead of being stuck on an old UniFi version tied to an old MongoDB/Ubuntu base.
+Java 25.
+
+MongoDB is pinned to **4.4.18** instead of the 6.0+ that the `unifi.deb` package normally
+depends on. Official MongoDB ARM64 builds from 5.0 onward require ARMv8.1 LSE atomic
+instructions, which older ARM64 cores — including the Cortex-A72 used in MikroTik's
+CCR2116 — don't implement, so `mongod` crashes with an illegal instruction immediately.
+4.4 is the last line built without that requirement, and is the same generation of
+MongoDB the router's own stock (non-Docker) UniFi package has run for years without issue.
+This is what makes it possible to run a *current* UniFi release on this class of hardware
+at all — see [Running on MikroTik RouterOS](#running-on-mikrotik-routeros-arm64) below.
 
 ## Running on MikroTik RouterOS (arm64)
 
@@ -187,6 +197,10 @@ own controller for the APs/switches it's already routing traffic for.
   confirmation or a cold reboot), and on a device already in production this is disruptive.
   **Test this on a spare/test router first** — do not enable/experiment with this on a
   router that's actively serving users.
+- Older arm64 cores (e.g. Cortex-A72, as in the CCR2116) lack the ARMv8.1 LSE atomic
+  instructions that MongoDB 5.0+ requires — this fork pins MongoDB to 4.4.18 specifically
+  so it still runs there (see [multiarch](#multiarch) above). If you're on a newer
+  ARMv8.1+ board this doesn't affect you either way.
 
 ### 1. Enable container mode
 
@@ -493,6 +507,10 @@ You can check your certificate for this with the following command:
 % openssl x509 -text < cert.pem | grep 'Public Key Algorithm'
          Public Key Algorithm: id-ecPublicKey
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 If the output contains `id-ec` as shown in the example, then your certificate might be affected.
 
