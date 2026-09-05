@@ -49,6 +49,17 @@ apt-get install -qy --no-install-recommends \
 # ARMv8.1 LSE atomics, which older ARM64 cores (e.g. Cortex-A72, as used in MikroTik CCR2116)
 # don't implement — mongod hits SIGILL immediately. 4.4 is the last line built without that
 # requirement. See project memory unifi-container-arm64-mongodb-incompatibility for details.
+# mongodb-org 4.4 packages depend on libssl1.1, which Ubuntu dropped from its repos years ago
+# (replaced by libssl3). Fetch it directly from the last archive that still hosts it.
+case "$(dpkg --print-architecture)" in
+    amd64) SSL_BASE=http://archive.ubuntu.com/ubuntu/pool/main/o/openssl ;;
+    arm64) SSL_BASE=http://ports.ubuntu.com/pool/main/o/openssl ;;
+    *) echo "unsupported architecture for libssl1.1 fetch: $(dpkg --print-architecture)"; exit 1 ;;
+esac
+curl -Ls -o /tmp/libssl1.1.deb "${SSL_BASE}/libssl1.1_1.1.1f-1ubuntu2.24_$(dpkg --print-architecture).deb"
+dpkg -i /tmp/libssl1.1.deb
+rm -f /tmp/libssl1.1.deb
+
 curl -Ls https://www.mongodb.org/static/pgp/server-4.4.asc | gpg --dearmor -o /usr/share/keyrings/mongo.gpg
 echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongo.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 apt-get update
