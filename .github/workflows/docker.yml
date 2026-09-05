@@ -5,7 +5,7 @@ on:
       - 'main'
       - 'hotfix/*'
     tags:
-      - 'v*.*.*'
+      - '*.*.*'
   workflow_dispatch: {}
 
 permissions:
@@ -54,9 +54,9 @@ jobs:
         with:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}
-            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
           images: |
             ghcr.io/${{ github.repository }}
