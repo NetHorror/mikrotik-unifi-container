@@ -44,7 +44,7 @@ patch_uos_nag() {
   [ "${DISABLE_UOS_UPGRADE_NAG}" == "true" ] || return 0
 
   local marker="mikrotik-unifi-container: uos-nag-patch"
-  local snippet="<!-- ${marker} v1 --><script>(function(){var a='data-mikrotik-unifi-container-uos-nag-patch';if(document.documentElement.hasAttribute(a))return;document.documentElement.setAttribute(a,'1');function dismiss(){var dialogs=document.querySelectorAll('[role=\"dialog\"]');for(var i=0;i<dialogs.length;i++){var d=dialogs[i];if(!/Upgrade to UniFi OS Server/i.test(d.textContent||''))continue;var btns=d.querySelectorAll('button');for(var j=0;j<btns.length;j++){if(/Remind Me Later/i.test(btns[j].textContent||'')){btns[j].click();return;}}}}setInterval(dismiss,250);window.addEventListener('load',dismiss);})();</script>"
+  local snippet="<!-- ${marker} v2 --><script>(function(){var a='data-mikrotik-unifi-container-uos-nag-patch';if(document.documentElement.hasAttribute(a))return;document.documentElement.setAttribute(a,'1');function dismiss(){var dialogs=document.querySelectorAll('[role=\"dialog\"]');for(var i=0;i<dialogs.length;i++){var d=dialogs[i];if(!/Upgrade to UniFi OS Server/i.test(d.textContent||''))continue;var btns=d.querySelectorAll('button');for(var j=0;j<btns.length;j++){if(/Remind Me Later/i.test(btns[j].textContent||'')){btns[j].click();return;}}}}dismiss();new MutationObserver(dismiss).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',dismiss);})();</script>"
 
   local file found=0 patched=0
   while IFS= read -r -d '' file; do
