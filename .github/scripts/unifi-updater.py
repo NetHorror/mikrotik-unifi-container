@@ -215,14 +215,14 @@ def update_readme(version: str, date_str: str, link: str) -> None:
         src = f.read()
 
     new_row = (
-        f"| [`latest` `v{version}`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) "
+        f"| [`latest` `{version}`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) "
         f"| Current Stable: Version {version} as of {date_str} "
         f"| [Change Log {version}]({link}) |"
     )
 
     # Replace the first "latest" row in the Current Information table
     new_src, subs = re.subn(
-        r"^\| \[`latest` `v[0-9.]+`\]\(.*?\) \| Current Stable: Version [0-9.]+ as of [0-9-]+ \| \[Change Log [0-9.]+\]\(.*?\) \|$",
+        r"^\| \[`latest` `[0-9.]+`\]\(.*?\) \| Current Stable: Version [0-9.]+ as of [0-9-]+ \| \[Change Log [0-9.]+\]\(.*?\) \|$",
         new_row,
         src,
         count=1,
