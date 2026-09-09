@@ -5,6 +5,21 @@ fork's auto-updater (`update.yml`) picks up each new **stable** release
 (no betas, no RCs). See [community.ui.com/releases](https://community.ui.com/releases)
 for the canonical/official source.
 
+## [9.0.120] - 2026-09-08
+
+[Official release notes](https://community.ui.com/releases/UniFi-Network-Application-9-0-120/97b8b06f-ce7c-4003-818f-8683aa14b09b)
+
+### Overview
+UniFi Network Application 9.0.120 includes the improvement below.
+
+### Improvements
+
+- Improved application stability.
+
+### Additional information
+
+- This release is only available for the UniFi Express (UX).
+
 ## [10.6.101] - 2026-08-26
 
 [Official release notes](https://community.ui.com/releases/UniFi-Network-Application-10-6-101/05283624-0980-4dd7-b8d6-9fa5c4e28da4)
