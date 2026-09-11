@@ -39,21 +39,6 @@ Compatible with UDM, UDR, UDR7, UDR 5G Max, Express, Express 7, and UCG models (
 - The manual update process via SSH requires a compatible package. Incompatible packages will be rejected on installation.
 - Older UniFi OS versions (prior to UniFi OS 3.1.6) on the UDM and UDR continue to utilize the standard UniFi Network Application for UniFi OS.
 
-## [9.0.120] - 2026-09-08
-
-[Official release notes](https://community.ui.com/releases/UniFi-Network-Application-9-0-120/97b8b06f-ce7c-4003-818f-8683aa14b09b)
-
-### Overview
-UniFi Network Application 9.0.120 includes the improvement below.
-
-### Improvements
-
-- Improved application stability.
-
-### Additional information
-
-- This release is only available for the UniFi Express (UX).
-
 ## [10.6.101] - 2026-08-26
 
 [Official release notes](https://community.ui.com/releases/UniFi-Network-Application-10-6-101/05283624-0980-4dd7-b8d6-9fa5c4e28da4)
