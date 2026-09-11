@@ -5,6 +5,40 @@ fork's auto-updater (`update.yml`) picks up each new **stable** release
 (no betas, no RCs). See [community.ui.com/releases](https://community.ui.com/releases)
 for the canonical/official source.
 
+## [10.6.106] - 2026-09-10
+
+[Official release notes](https://community.ui.com/releases/UniFi-Network-Application-10-6-106/f206c01d-3f73-471b-b4a5-2da48f157ea6)
+
+### Improvements
+
+- Added MLO STR Mesh support for WiFi 7 Access Points.
+- Requires UAP 8.8 or newer.
+- Improved Application stability.
+- Improved Observability resiliency.
+
+### Bugfixes
+
+- Fixed a rare issue where WiFi clients using MLO could display an incorrect IP address.
+- Fixed an issue where WiFi Broadcast could fail on UDR7 and UDR-5G when using MLO STR.
+- Fixed inaccurate Port Lock events in Port Manager Time Machine.
+- Fixed an issue where Site Admins could fail to open Settings in multi-site deployments.
+- Fixed a rare issue where network configuration changes could fail to save.
+- Fixed a rare issue where the Client Session widget was not displayed in the Client panel.
+
+### Additional information
+
+**UniFi OS Server**
+
+Going forward, we recommend users upgrade to [UniFi OS Server](https://ui.com/download/releases/unifi-os-server) for all self-hosted deployments. It provides the full UniFi OS Platform experience, ensuring you receive the latest features, improvements, and integrations.
+
+**UniFi Network Native Application for UniFi OS**
+
+Compatible with UDM, UDR, UDR7, UDR 5G Max, Express, Express 7, and UCG models (Ultra, Max, Fiber, and Industrial) on UniFi OS 3.1.6 or later. UDM-Pro, UDM-SE, and UDW have been using it since UniFi OS 5.1.5.
+
+- The UniFi OS update utilizes the application version compatible with your console.
+- The manual update process via SSH requires a compatible package. Incompatible packages will be rejected on installation.
+- Older UniFi OS versions (prior to UniFi OS 3.1.6) on the UDM and UDR continue to utilize the standard UniFi Network Application for UniFi OS.
+
 ## [9.0.120] - 2026-09-08
 
 [Official release notes](https://community.ui.com/releases/UniFi-Network-Application-9-0-120/97b8b06f-ce7c-4003-818f-8683aa14b09b)
