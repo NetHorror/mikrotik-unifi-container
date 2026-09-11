@@ -74,7 +74,7 @@ if [ -d "/usr/local/docker/pre_build/$(dpkg --print-architecture)" ]; then
     find "/usr/local/docker/pre_build/$(dpkg --print-architecture)" -type f -exec '{}' \;
 fi
 
-curl -L -o ./unifi.deb "${1}"
+tryfail curl -fL -o ./unifi.deb "${1}"
 # unifi.deb declares a hard Depends on mongodb-org (>=6.0) at the packaging-metadata level;
 # --force-depends skips only that check (postinst still runs normally). Do NOT follow this with
 # `apt-get install -f` — it would "fix" the unmet dependency by pulling MongoDB 6+ back in.

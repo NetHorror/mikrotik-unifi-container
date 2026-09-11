@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import html
 import os
 import urllib.request
@@ -23,14 +25,21 @@ def fetch(url: str) -> bytes:
         return resp.read()
 
 
-def parse_rss_latest(feed_bytes):
+def parse_rss_latest(feed_bytes, current_version=None):
     """
     Parse the RSS feed and pick the newest release.
+
+    The feed interleaves the 10.x mainline with a parallel 9.0.x legacy/LTS
+    branch, sorted by publish date rather than version - so the most recent
+    item isn't necessarily the newest release. Candidates are only accepted
+    if they're actually newer than `current_version` (when given); otherwise
+    None is returned to signal "nothing to do".
 
     Priority:
     1. Stable (no 'beta', 'rc', or 'release candidate' in title)
     2. RC (no 'beta' in title)
-    3. Any entry with a version, as a last resort
+    3. Any entry with a version, as a last resort (only when current_version
+       is None, i.e. there's nothing pinned yet to compare against)
     """
     root = ET.fromstring(feed_bytes)
     items = root.findall(".//item")
@@ -86,21 +95,35 @@ def parse_rss_latest(feed_bytes):
     if not releases:
         raise RuntimeError("No releases with a recognizable version found in RSS feed")
 
-    # 1. Prefer "stable" (no beta/rc)
-    stable = [
+    def is_newer(r):
+        if current_version is None:
+            return True
+        try:
+            return version_tuple(r["version"]) > version_tuple(current_version)
+        except ValueError:
+            return True
+
+    # 1. Prefer "stable" (no beta/rc), and actually newer than what's pinned
+    stable_newer = [
         r for r in releases
         if not any(tag in r["title_lc"] for tag in ("beta", " rc", "release candidate"))
+        and is_newer(r)
     ]
-    if stable:
-        return stable[0]
+    if stable_newer:
+        return stable_newer[0]
 
-    # 2. Fallback: allow RCs but still skip explicit "beta"
-    rc = [r for r in releases if "beta" not in r["title_lc"]]
-    if rc:
-        return rc[0]
+    # 2. Fallback: allow RCs (still newer than current), but skip explicit "beta"
+    rc_newer = [r for r in releases if "beta" not in r["title_lc"] and is_newer(r)]
+    if rc_newer:
+        return rc_newer[0]
 
-    # 3. Last resort: whatever is first in the feed
-    return releases[0]
+    # 3. Last resort: whatever is first in the feed - only when there's
+    # nothing pinned yet to compare against (fresh setup)
+    if current_version is None:
+        return releases[0]
+
+    # Nothing in the feed is actually newer than what's already pinned
+    return None
 
 
 def build_pkgurl(version: str) -> str:
@@ -109,6 +132,21 @@ def build_pkgurl(version: str) -> str:
     Example: 9.5.21 -> https://dl.ui.com/unifi/9.5.21/unifi_sysvinit_all.deb
     """
     return f"https://dl.ui.com/unifi/{version}/unifi_sysvinit_all.deb"
+
+
+def version_tuple(version: str):
+    return tuple(int(p) for p in version.split("."))
+
+
+def get_current_version() -> str | None:
+    """
+    Read the version currently pinned in the Dockerfile's PKGURL, so the
+    caller can refuse to "update" to something that isn't actually newer.
+    """
+    with open(DOCKERFILE, "r", encoding="utf-8") as f:
+        src = f.read()
+    m = re.search(r"ARG\s+PKGURL=https://dl\.ui\.com/unifi/([0-9.]+)/", src)
+    return m.group(1) if m else None
 
 
 def html_to_markdown(raw_html: str) -> str:
@@ -290,8 +328,17 @@ def write_release_notes(link: str, description_html: str) -> None:
 
 
 def main() -> None:
+    current_version = get_current_version()
+
     feed = fetch(FEED_URL)
-    rel = parse_rss_latest(feed)
+    rel = parse_rss_latest(feed, current_version)
+
+    if rel is None:
+        # Nothing in the feed is newer than what's already pinned (e.g. the
+        # feed's most recent entry belongs to a parallel/legacy branch, like
+        # the 9.0.x LTS line interleaved with the 10.x mainline).
+        print(current_version)
+        return
 
     version = rel["version"]
     link = rel["link"]
