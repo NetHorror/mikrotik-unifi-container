@@ -19,7 +19,7 @@ CHANGELOG = "CHANGELOG.md"
 def fetch(url: str) -> bytes:
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Mozilla/5.0 (GitHub Actions UniFi Updater)"}
+        headers={"User-Agent": "Mozilla/5.0 (mikrotik-unifi-container updater)"}
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
         return resp.read()
@@ -316,7 +316,7 @@ def update_changelog(version: str, date_str: str, link: str, description_html: s
 def write_release_notes(link: str, description_html: str) -> None:
     """
     Write the same "what's new" text used in the CHANGELOG entry to a file
-    outside the repo tree, so the GitHub Actions workflow can pass it to
+    outside the repo tree, so the CI workflow can pass it to
     `gh release create --notes-file` without it being picked up by `git add -A`.
     """
     body = html_to_markdown(description_html) if description_html else ""
@@ -351,7 +351,7 @@ def main() -> None:
     update_changelog(version, date_str, link, rel["description"])
     write_release_notes(link, rel["description"])
 
-    # Printed so GitHub Actions step can capture it
+    # Printed so the CI workflow step can capture it
     print(version)
 
 
