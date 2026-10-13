@@ -25,6 +25,25 @@ def fetch(url: str) -> bytes:
         return resp.read()
 
 
+# 11.x is UniFi OS only (no standalone sysvinit .deb); 10.6 is the last
+# self-hosted line this image can package.
+MAX_MAJOR = 10
+
+
+def deb_exists(version: str) -> bool:
+    """HEAD-check that the sysvinit .deb for this version is actually published."""
+    req = urllib.request.Request(
+        build_pkgurl(version),
+        method="HEAD",
+        headers={"User-Agent": "Mozilla/5.0 (mikrotik-unifi-container updater)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+
 def parse_rss_latest(feed_bytes, current_version=None):
     """
     Parse the RSS feed and pick the newest release.
@@ -103,24 +122,35 @@ def parse_rss_latest(feed_bytes, current_version=None):
         except ValueError:
             return True
 
+    def first_packageable(candidates):
+        # Cheap checks first; the HEAD request only runs for plausible picks.
+        for r in candidates:
+            if version_tuple(r["version"])[0] > MAX_MAJOR:
+                continue
+            if deb_exists(r["version"]):
+                return r
+        return None
+
     # 1. Prefer "stable" (no beta/rc), and actually newer than what's pinned
     stable_newer = [
         r for r in releases
         if not any(tag in r["title_lc"] for tag in ("beta", " rc", "release candidate"))
         and is_newer(r)
     ]
-    if stable_newer:
-        return stable_newer[0]
+    picked = first_packageable(stable_newer)
+    if picked:
+        return picked
 
     # 2. Fallback: allow RCs (still newer than current), but skip explicit "beta"
     rc_newer = [r for r in releases if "beta" not in r["title_lc"] and is_newer(r)]
-    if rc_newer:
-        return rc_newer[0]
+    picked = first_packageable(rc_newer)
+    if picked:
+        return picked
 
     # 3. Last resort: whatever is first in the feed - only when there's
     # nothing pinned yet to compare against (fresh setup)
     if current_version is None:
-        return releases[0]
+        return first_packageable(releases)
 
     # Nothing in the feed is actually newer than what's already pinned
     return None
