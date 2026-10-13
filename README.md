@@ -160,7 +160,7 @@ this fork's auto-updater deliberately never picks up betas or release candidates
 
 | Tag                                                                                 | Description                                        | Changelog                                                                                                                        |
 |--------------------------------------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| [`latest` `10.6.106`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) | Current Stable: Version 10.6.106 as of 2026-09-10 | [Change Log 10.6.106](https://community.ui.com/releases/UniFi-Network-Application-10-6-106/f206c01d-3f73-471b-b4a5-2da48f157ea6) |
+| [`latest` `11.0.83`](https://github.com/NetHorror/mikrotik-unifi-container/blob/main/Dockerfile) | Current Stable: Version 11.0.83 as of 2026-10-12 | [Change Log 11.0.83](https://community.ui.com/releases/UniFi-Network-Application-11-0-83/d6940379-cd5a-4e61-8596-7e22d647a4ea) |
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full history of stable releases this fork has
 picked up, auto-generated from UniFi's own release notes each time `update.yml` runs.
