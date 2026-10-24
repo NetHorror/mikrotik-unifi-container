@@ -5,6 +5,30 @@ fork's auto-updater (`update.yml`) picks up each new **stable** release
 (no betas, no RCs). See [community.ui.com/releases](https://community.ui.com/releases)
 for the canonical/official source.
 
+## [10.6.109] - 2026-10-23
+
+[Official release notes](https://community.ui.com/releases/UniFi-Network-Application-10-6-109/772020d5-1426-4015-bbd6-631d28803933)
+
+### Improvements
+
+- Revoked compromised eMudhra CA certificates.
+
+### Additional information
+
+**UniFi OS Server**
+
+Going forward, we recommend users upgrade to [UniFi OS Server](https://ui.com/download/releases/unifi-os-server) for all self-hosted deployments. It provides the full UniFi OS Platform experience, ensuring you receive the latest features, improvements, and integrations.
+
+**UniFi Network Native Application for UniFi OS**
+
+Compatible with UDM, UDR, UDR7, UDR 5G Max, Express, Express 7, and UCG models (Ultra, Max, Fiber, and Industrial) on UniFi OS 3.1.6 or later. UDM-Pro, UDM-SE, and UDW have been using it since UniFi OS 5.1.5.
+
+- The UniFi OS update utilizes the application version compatible with your console.
+
+- The manual update process via SSH requires a compatible package. Incompatible packages will be rejected on installation.
+
+- Older UniFi OS versions (prior to UniFi OS 3.1.6) on the UDM and UDR continue to utilize the standard UniFi Network Application for UniFi OS.
+
 ## [10.6.106] - 2026-09-10
 
 [Official release notes](https://community.ui.com/releases/UniFi-Network-Application-10-6-106/f206c01d-3f73-471b-b4a5-2da48f157ea6)
