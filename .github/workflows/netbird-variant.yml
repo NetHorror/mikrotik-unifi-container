@@ -1,8 +1,9 @@
-name: Publish UniFi + NetBird image
+name: Publish UniFi + NetBird variant
 
-# Builds the UniFi image with the NetBird client as a separate package.
-# Runs after the UniFi update job and rebuilds whenever the UniFi version (Dockerfile PKGURL)
-# or the latest NetBird release changes. Nothing is rebuilt if the tag already exists in ghcr.
+# Publishes the NetBird-enabled variant of the UniFi image into the same package as the main image.
+# Tags: <unifi>-netbird<netbird> (pinned) and netbird (latest variant). The main "latest" tag is not touched.
+# Runs daily after the UniFi update and rebuilds when the UniFi version (Dockerfile PKGURL)
+# or the latest NetBird release changes. If the pinned tag already exists, nothing is rebuilt.
 
 on:
   schedule:
@@ -10,7 +11,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: publish-unifi-netbird-image
+  group: publish-unifi-netbird-variant
   cancel-in-progress: false
 
 permissions:
@@ -18,7 +19,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/nethorror/mikrotik-unifi-container-netbird
+  IMAGE: ghcr.io/nethorror/mikrotik-unifi-container
 
 jobs:
   build:
@@ -36,7 +37,7 @@ jobs:
                 | python3 -c 'import sys, json; print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
           echo "unifi=${UNIFI}" >> "$GITHUB_OUTPUT"
           echo "netbird=${NB}" >> "$GITHUB_OUTPUT"
-          echo "tag=${UNIFI}-nb${NB}" >> "$GITHUB_OUTPUT"
+          echo "tag=${UNIFI}-netbird${NB}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -71,9 +72,9 @@ jobs:
             NETBIRD_VERSION=${{ steps.v.outputs.netbird }}
           tags: |
             ${{ env.IMAGE }}:${{ steps.v.outputs.tag }}
-            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:netbird
           labels: |
-            org.opencontainers.image.title=mikrotik-unifi-container-netbird
+            org.opencontainers.image.title=mikrotik-unifi-container
             org.opencontainers.image.description=UniFi Network Application ${{ steps.v.outputs.unifi }} with NetBird client ${{ steps.v.outputs.netbird }} for RouterOS containers
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.v.outputs.tag }}
