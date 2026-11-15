@@ -374,6 +374,37 @@ re-download and don't do this on a whim on a slow link. To rename `root-dir`, yo
 `root-dir=` — same procedure as [Updating](#7-updating) above, just with a different
 `root-dir=` value in the `/container/add` line.
 
+### NetBird variant (UniFi + NetBird client in one container)
+
+An optional variant of the image includes the [NetBird](https://netbird.io) client, so the
+controller can be reached over your NetBird network without a separate container. It is the
+same UniFi image plus the NetBird binary and an entrypoint that starts the client in the
+background before UniFi. Published tags: `netbird` (latest variant) and `<unifi>-netbird<netbird>`
+(pinned, for example `10.6.111-netbird0.83.1`). The main `latest` tag is the plain UniFi image.
+
+Install is the same as steps 1–5 above, with these differences:
+
+- `remote-image=ghcr.io/nethorror/mikrotik-unifi-container:netbird` (or the pinned tag).
+- Add two environment variables to the envlist:
+  - `NB_MANAGEMENT_URL=https://<your-netbird-management-host>` (for example `https://netbird.example.com`);
+  - `NB_SETUP_KEY=<one-time setup key>` from the NetBird dashboard (Setup Keys). The key is
+    used only for the first registration; the client keeps its state afterwards, so the key
+    can be removed from the envlist once the peer shows as connected.
+- Mount the same data paths as the plain image. NetBird state is kept in `/unifi/data/netbird`
+  (inside the data mount), so it survives container updates together with the controller data.
+
+The image sets userspace mode defaults (`NB_USE_NETSTACK_MODE`, `NB_DISABLE_DNS`,
+`NB_DISABLE_CUSTOM_ROUTING`, `NB_USE_LEGACY_ROUTING`, `NB_ENABLE_NETSTACK_LOCAL_FORWARDING`).
+The client then does not change the container's routes or DNS. Do not switch these to kernel
+mode on a RouterOS container: the client breaks its own DNS there and cannot reach its
+management server.
+
+Set `NB_ENABLE=0` in the envlist to run the plain UniFi controller from this image without NetBird.
+
+Check the result with the NetBird dashboard (the peer should show as connected) and the logs
+(`/container/print` status and `/log`). Verified on a RouterOS arm64 router with UniFi 10.6.109
+and NetBird 0.83.1: management, relay and signal connected, UniFi answering on 8080 and 8443.
+
 ## Adopting Access Points and Unifi Devices
 
 For your Unifi devices to "find" the Unifi Controller running in Docker, you _MUST_ override the
